@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}{% if job %}Edit Job #{{ job.id }}{% else %}Book Appointment{% endif %} - Smarti Environmental CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        
+        <!-- Header -->
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full {% if job %}bg-blue-500{% else %}bg-emerald-500{% endif %}"></span>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">
+                        {% if job %}Edit Job & Work Order #{{ job.id }}{% else %}Book Field Appointment{% endif %}
+                    </h1>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">
+                    {% if job %}
+                        Update appointment schedule, engineer dispatching, or site access instructions.
+                    {% else %}
+                        Select commercial client and choose an available engineering dispatch slot.
+                    {% endif %}
+                </p>
+            </div>
+            
+            <!-- Real-time GMT Clock Badge -->
+            <div class="inline-flex items-center space-x-1.5 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg self-start sm:self-center">
+                <i class="fa-solid fa-earth-europe text-emerald-600 text-xs"></i>
+                <span>GMT Live:</span>
+                <span class="font-bold text-slate-900 font-mono" id="liveGmtClock">{{ now_gmt_time }}</span>
+            </div>
+        </div>
+
+        {% if error_message %}
+        <!-- Validation Alert Banner -->
+        <div class="mx-6 mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start space-x-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base mt-0.5 flex-shrink-0"></i>
+            <div>
+                <p class="font-bold">Booking Notice</p>
+                <p class="mt-0.5">{{ error_message }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{% if job %}/jobs/{{ job.id }}/edit{% else %}/jobs/new{% endif %}" class="p-6 space-y-4" id="appointmentForm">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Customer / Commercial Site *</label>
+                <select name="customer_id" required class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="">-- Select Customer --</option>
+                    {% for c in customers %}
+                    <option value="{{ c.id }}" {% if (job and job.customer_id == c.id) or (selected_customer_id == c.id) %}selected{% endif %}>
+                        {{ c.name }} &bull; {{ c.onboarding_status }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Service Work Order / Objective *</label>
+                <input type="text" name="service_type" required value="{{ job.service_type if job else (form_service_type or '') }}" placeholder="e.g. Smart Urinal Valve Retrofit & Telemetry Calibration" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <!-- Date & Time Slot in Real-time GMT -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label class="block text-xs font-bold text-slate-800 uppercase">
+                        1. Appointment Date (GMT) *
+                    </label>
+                    <span id="dateStatusNote" class="text-[11px] text-emerald-700 font-medium"></span>
+                </div>
+
+                <input type="date" 
+                       id="scheduled_date" 
+                       name="scheduled_date" 
+                       required 
+                       min="{{ today_gmt }}" 
+                       value="{{ job.scheduled_date if job else (form_date or suggested_date) }}" 
+                       class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold">
+
+                <!-- Slot Selection Section -->
+                <div class="pt-2">
+                    <label class="block text-xs font-bold text-slate-800 uppercase mb-1.5">
+                        2. Engineering Dispatch Slot (GMT) *
+                    </label>
+                    
+                    <select id="scheduled_time" name="scheduled_time" required class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                        {% for slot in dispatch_slots %}
+                        <option value="{{ slot.time }}" 
+                                data-time="{{ slot.time }}"
+                                {% if (job and job.scheduled_time == slot.time) or (selected_slot_time == slot.time) %}selected{% endif %}>
+                            {{ slot.label }} &bull; {{ slot.period }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p id="slotHelpText" class="text-[11px] text-slate-500 mt-1">Select a 90-minute operational dispatch window.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Assigned Field Specialist</label>
+                    <select name="staff_id" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="0">-- Leave Unassigned (Pending Dispatch) --</option>
+                        {% for s in staff %}
+                        <option value="{{ s.id }}" {% if job and job.staff_id == s.id %}selected{% endif %}>
+                            {{ s.name }} ({{ s.role }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Execution Status</label>
+                    <select name="status" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                        {% if job %}
+                            <option value="Pending" {% if job.status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="In Progress" {% if job.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Completed" {% if job.status == 'Completed' %}selected{% endif %}>Completed</option>
+                        {% else %}
+                            <option value="Pending" selected>Pending</option>
+                            <option value="In Progress">In Progress (Immediate)</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Site Access Instructions / Notes</label>
+                <textarea name="location_notes" rows="3" placeholder="Key location, site contacts, health & safety requirements" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">{{ job.location_notes if job else (form_notes or '') }}</textarea>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <a href="/jobs?view=upcoming" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900">Cancel</a>
+                <button type="submit" id="submitBtn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition whitespace-nowrap">
+                    {% if job %}Save Job Changes{% else %}Confirm Booking{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Dynamic Slot Filter Script -->
+<script>
+    (function() {
+        const todayStr = "{{ today_gmt }}";
+        const nowTimeStr = "{{ now_gmt_time }}";
+        const dateInput = document.getElementById("scheduled_date");
+        const timeSelect = document.getElementById("scheduled_time");
+        const dateNote = document.getElementById("dateStatusNote");
+        const slotHelp = document.getElementById("slotHelpText");
+        const isEditing = {% if job %}true{% else %}false{% endif %};
+
+        function filterAvailableSlots() {
+            if (isEditing) return; // Allow existing appointment viewing
+
+            const isToday = (dateInput.value === todayStr);
+            let availableCount = 0;
+            let firstValidOption = null;
+
+            for (let i = 0; i < timeSelect.options.length; i++) {
+                const opt = timeSelect.options[i];
+                const slotTime = opt.getAttribute("data-time");
+                const originalText = opt.text.replace(" (Passed)", "");
+
+                if (isToday && slotTime <= nowTimeStr) {
+                    opt.disabled = true;
+                    opt.text = originalText + " (Passed)";
+                } else {
+                    opt.disabled = false;
+                    opt.text = originalText;
+                    availableCount++;
+                    if (!firstValidOption) firstValidOption = opt;
+                }
+            }
+
+            if (isToday) {
+                if (availableCount === 0) {
+                    dateNote.textContent = "All slots passed today. Please pick tomorrow.";
+                    dateNote.className = "text-[11px] text-amber-600 font-bold";
+                    slotHelp.textContent = "No remaining slots today (closed at " + nowTimeStr + " GMT).";
+                    slotHelp.className = "text-[11px] text-amber-600 font-semibold mt-1";
+                } else {
+                    dateNote.textContent = availableCount + " slot(s) remaining today";
+                    dateNote.className = "text-[11px] text-emerald-700 font-medium";
+                    slotHelp.textContent = "Slots earlier than current GMT time (" + nowTimeStr + ") are disabled.";
+                    slotHelp.className = "text-[11px] text-slate-500 mt-1";
+                }
+            } else {
+                dateNote.textContent = "All 6 dispatch slots available";
+                dateNote.className = "text-[11px] text-emerald-700 font-medium";
+                slotHelp.textContent = "Select any working slot for this date.";
+                slotHelp.className = "text-[11px] text-slate-500 mt-1";
+            }
+
+            if (timeSelect.selectedOptions.length && timeSelect.selectedOptions[0].disabled) {
+                if (firstValidOption) {
+                    firstValidOption.selected = true;
+                }
+            }
+        }
+
+        dateInput.addEventListener("change", filterAvailableSlots);
+        filterAvailableSlots();
+    })();
+</script>
+{% endblock %}

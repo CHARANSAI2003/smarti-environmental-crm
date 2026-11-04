@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Fitters & Maintenance Engineers - Smarti Environmental CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Fitters & Maintenance Engineers</h1>
+            <p class="text-sm text-slate-500 mt-1">Manage field operational personnel, certifications, and dispatch workloads.</p>
+        </div>
+        <button onclick="document.getElementById('addStaffModal').classList.remove('hidden')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 transition">
+            <i class="fa-solid fa-user-plus mr-2"></i> Add Staff Member
+        </button>
+    </div>
+
+    <!-- Staff Roster Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for member in staff %}
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4 hover:border-slate-300 transition">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">{{ member.name }}</h2>
+                    <span class="inline-block mt-1 px-2.5 py-0.5 rounded text-xs font-semibold
+                        {% if member.role == 'Fitter' %}bg-blue-50 text-blue-700 border border-blue-200
+                        {% else %}bg-purple-50 text-purple-700 border border-purple-200{% endif %}">
+                        {{ member.role }}
+                    </span>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">
+                    {{ member.name[:2]|upper }}
+                </div>
+            </div>
+
+            <div class="space-y-1.5 text-xs text-slate-600">
+                <div><i class="fa-regular fa-envelope text-slate-400 mr-2"></i>{{ member.email }}</div>
+                <div><i class="fa-solid fa-phone text-slate-400 mr-2"></i>{{ member.phone }}</div>
+                <div><i class="fa-solid fa-certificate text-slate-400 mr-2"></i>{{ member.specialism }}</div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-medium">{{ member.jobs|length }} jobs assigned</span>
+                <a href="/jobs?staff={{ member.id }}" class="text-emerald-600 hover:underline font-semibold">View Jobs</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Staff Modal (Hidden by default) -->
+    <div id="addStaffModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900">Add Field Staff</h3>
+                <button onclick="document.getElementById('addStaffModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            <form action="/staff/new" method="post" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Full Name</label>
+                    <input type="text" name="name" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Role</label>
+                    <select name="role" class="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white">
+                        <option value="Fitter">Fitter</option>
+                        <option value="Maintenance Engineer">Maintenance Engineer</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Email</label>
+                    <input type="email" name="email" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Phone</label>
+                    <input type="text" name="phone" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 uppercase mb-1">Specialism / Certification</label>
+                    <input type="text" name="specialism" placeholder="e.g. WRAS Certified, IoT Metrology" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="document.getElementById('addStaffModal').classList.add('hidden')" class="px-3 py-2 text-slate-600 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold">Save Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

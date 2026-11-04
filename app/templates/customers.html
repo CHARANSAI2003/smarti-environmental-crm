@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Customers & Onboarding - Smarti Environmental CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Customer Management</h1>
+            <p class="text-sm text-slate-500 mt-1">Track customer onboarding lifecycle, contact information, and service premises.</p>
+        </div>
+        <a href="/customers/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 transition">
+            <i class="fa-solid fa-plus mr-2"></i> Add Customer
+        </a>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <form method="get" action="/customers" class="flex flex-1 w-full sm:w-auto items-center space-x-3">
+            <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                <input type="text" name="search" value="{{ search_query or '' }}" placeholder="Search company, contact, or address..." class="w-full pl-9 pr-4 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <select name="status" onchange="this.form.submit()" class="text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Onboarding Stages</option>
+                <option value="New Enquiry" {% if selected_status == 'New Enquiry' %}selected{% endif %}>New Enquiry</option>
+                <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Active" {% if selected_status == 'Active' %}selected{% endif %}>Active</option>
+            </select>
+            <button type="submit" class="px-3.5 py-2 bg-slate-800 text-white text-xs font-medium rounded-lg hover:bg-slate-700">Filter</button>
+            {% if search_query or (selected_status and selected_status != 'All') %}
+                <a href="/customers" class="text-xs text-slate-500 hover:text-slate-800 underline">Reset</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                        <th class="py-3 px-4">Customer / Organisation</th>
+                        <th class="py-3 px-4">Contact Details</th>
+                        <th class="py-3 px-4">Premises Address</th>
+                        <th class="py-3 px-4">Onboarding Status</th>
+                        <th class="py-3 px-4">Jobs</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for customer in customers %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3.5 px-4">
+                            <a href="/customers/{{ customer.id }}" class="font-bold text-slate-900 hover:text-emerald-600 block text-sm">{{ customer.name }}</a>
+                            <span class="text-slate-400 text-[11px]">ID: #CUS-{{ customer.id }}</span>
+                        </td>
+                        <td class="py-3.5 px-4 space-y-0.5">
+                            <div class="text-slate-700"><i class="fa-regular fa-envelope text-slate-400 mr-1.5"></i>{{ customer.email }}</div>
+                            <div class="text-slate-500"><i class="fa-solid fa-phone text-slate-400 mr-1.5"></i>{{ customer.phone }}</div>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-600 max-w-xs truncate" title="{{ customer.address }}">
+                            <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>{{ customer.address }}
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <form action="/customers/{{ customer.id }}/status" method="post" class="inline">
+                                <select name="onboarding_status" onchange="this.form.submit()" class="text-[11px] font-semibold rounded-full px-2.5 py-1 border focus:outline-none cursor-pointer
+                                    {% if customer.onboarding_status == 'Active' %}bg-emerald-50 text-emerald-800 border-emerald-200
+                                    {% elif customer.onboarding_status == 'In Progress' %}bg-blue-50 text-blue-800 border-blue-200
+                                    {% else %}bg-amber-50 text-amber-800 border-amber-200{% endif %}">
+                                    <option value="New Enquiry" {% if customer.onboarding_status == 'New Enquiry' %}selected{% endif %}>New Enquiry</option>
+                                    <option value="In Progress" {% if customer.onboarding_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Active" {% if customer.onboarding_status == 'Active' %}selected{% endif %}>Active</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                {{ customer.jobs|length }} scheduled
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right space-x-2">
+                            <a href="/customers/{{ customer.id }}" class="text-emerald-600 hover:text-emerald-800 font-semibold">View</a>
+                            <a href="/customers/{{ customer.id }}/edit" class="text-slate-600 hover:text-slate-900 font-medium">Edit</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-500 text-sm">No customers found matching current filters.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

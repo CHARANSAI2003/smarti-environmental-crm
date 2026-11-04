@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{% if customer %}Edit {{ customer.name }}{% else %}New Customer{% endif %} - Smarti Environmental CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100">
+            <h1 class="text-xl font-bold text-slate-900">{% if customer %}Edit Customer Record{% else %}Add New Customer Enquiry{% endif %}</h1>
+            <p class="text-xs text-slate-500 mt-1">Capture commercial client details, site address, and onboarding status.</p>
+        </div>
+
+        <form method="post" action="{% if customer %}/customers/{{ customer.id }}/edit{% else %}/customers/new{% endif %}" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Company / Customer Name *</label>
+                <input type="text" name="name" required value="{{ customer.name if customer else '' }}" placeholder="e.g. South West Water Headquarters" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Contact Email *</label>
+                    <input type="email" name="email" required value="{{ customer.email if customer else '' }}" placeholder="facilities@organisation.co.uk" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Contact Phone *</label>
+                    <input type="text" name="phone" required value="{{ customer.phone if customer else '' }}" placeholder="e.g. 01392 400100" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Premises Address *</label>
+                <textarea name="address" required rows="3" placeholder="Full site address including building, street, postcode" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">{{ customer.address if customer else '' }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Onboarding Status *</label>
+                    <select name="onboarding_status" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                        <option value="New Enquiry" {% if customer and customer.onboarding_status == 'New Enquiry' %}selected{% endif %}>New Enquiry</option>
+                        <option value="In Progress" {% if customer and customer.onboarding_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                        <option value="Active" {% if customer and customer.onboarding_status == 'Active' %}selected{% endif %}>Active</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Internal Notes</label>
+                    <input type="text" name="notes" value="{{ customer.notes if customer else '' }}" placeholder="Key access info, survey notes" class="w-full text-sm border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                <a href="/customers" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900">Cancel</a>
+                <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition">
+                    {% if customer %}Save Changes{% else %}Create Customer{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

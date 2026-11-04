@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }} - Smarti Environmental CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top navigation breadcrumb -->
+    <div class="flex items-center justify-between">
+        <a href="/customers" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+            &larr; Back to Customers
+        </a>
+        <div class="flex items-center space-x-2">
+            <a href="/jobs/new?customer_id={{ customer.id }}" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition">
+                <i class="fa-solid fa-plus mr-1"></i> Book Job for this Customer
+            </a>
+            <a href="/customers/{{ customer.id }}/edit" class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition">
+                Edit Record
+            </a>
+        </div>
+    </div>
+
+    <!-- Customer Header Card -->
+    <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-2xl font-extrabold text-slate-900">{{ customer.name }}</h1>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                    {% if customer.onboarding_status == 'Active' %}bg-emerald-50 text-emerald-800 border border-emerald-200
+                    {% elif customer.onboarding_status == 'In Progress' %}bg-blue-50 text-blue-800 border border-blue-200
+                    {% else %}bg-amber-50 text-amber-800 border border-amber-200{% endif %}">
+                    {{ customer.onboarding_status }}
+                </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Client ID: #CUS-{{ customer.id }} &bull; Added {{ customer.created_at.strftime('%d %b %Y') if customer.created_at else 'Recent' }}</p>
+        </div>
+
+        <form action="/customers/{{ customer.id }}/status" method="post" class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <label class="text-xs font-medium text-slate-600">Update Onboarding:</label>
+            <select name="onboarding_status" onchange="this.form.submit()" class="text-xs border border-slate-300 rounded px-2.5 py-1 bg-white font-semibold">
+                <option value="New Enquiry" {% if customer.onboarding_status == 'New Enquiry' %}selected{% endif %}>New Enquiry</option>
+                <option value="In Progress" {% if customer.onboarding_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Active" {% if customer.onboarding_status == 'Active' %}selected{% endif %}>Active</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Contact & Site Details</h2>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <span class="text-slate-400 block">Email Address</span>
+                    <span class="font-medium text-slate-800">{{ customer.email }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block">Phone Number</span>
+                    <span class="font-medium text-slate-800">{{ customer.phone }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block">Premises Address</span>
+                    <span class="font-medium text-slate-800 whitespace-pre-line">{{ customer.address }}</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block">Operational Notes</span>
+                    <span class="font-medium text-slate-700 italic">{{ customer.notes or 'No internal notes recorded.' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointment / Job History -->
+        <div class="md:col-span-2 bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Service History & Appointments</h2>
+                <span class="text-xs text-slate-500">{{ customer.jobs|length }} total</span>
+            </div>
+
+            <div class="divide-y divide-slate-100 flex-1">
+                {% if customer.jobs %}
+                    {% for job in customer.jobs %}
+                    <div class="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-slate-800 text-sm">{{ job.service_type }}</span>
+                                <span class="px-2 py-0.5 text-[11px] font-medium rounded-full
+                                    {% if job.status == 'Completed' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                                    {% elif job.status == 'In Progress' %}bg-blue-50 text-blue-700 border border-blue-200
+                                    {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                                    {{ job.status }}
+                                </span>
+                            </div>
+                            <div class="text-xs text-slate-500 flex items-center space-x-4">
+                                <span><i class="fa-regular fa-calendar text-slate-400 mr-1"></i>{{ job.scheduled_date }} at {{ job.scheduled_time }}</span>
+                                <span><i class="fa-solid fa-wrench text-slate-400 mr-1"></i>{{ job.staff.name if job.staff else 'Unassigned' }}</span>
+                            </div>
+                            {% if job.location_notes %}
+                            <p class="text-xs text-slate-500 italic">{{ job.location_notes }}</p>
+                            {% endif %}
+                        </div>
+                        <a href="/jobs/{{ job.id }}/edit" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800 self-start sm:self-center">Edit Job</a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="py-12 text-center text-slate-500 text-sm">
+                        No appointments currently scheduled for this account.
+                        <div class="mt-2">
+                            <a href="/jobs/new?customer_id={{ customer.id }}" class="text-emerald-600 font-semibold hover:underline">Book the first appointment &rarr;</a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

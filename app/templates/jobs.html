@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Jobs & Appointments - Smarti Environmental CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Jobs & Appointments</h1>
+            <p class="text-sm text-slate-500 mt-1">Unified field scheduling for fitters, maintenance engineers, and site inspections.</p>
+        </div>
+        <a href="/jobs/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 transition">
+            <i class="fa-solid fa-plus mr-2"></i> Book Appointment
+        </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <form method="get" action="/jobs" class="flex items-center space-x-3 text-xs">
+            <span class="font-semibold text-slate-600">Filter by status:</span>
+            <select name="status" onchange="this.form.submit()" class="border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none">
+                <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Statuses</option>
+                <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Completed" {% if selected_status == 'Completed' %}selected{% endif %}>Completed</option>
+            </select>
+        </form>
+        <span class="text-xs text-slate-500">{{ jobs|length }} total appointments</span>
+    </div>
+
+    <!-- Jobs Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                        <th class="py-3 px-4">Service Work Order</th>
+                        <th class="py-3 px-4">Customer</th>
+                        <th class="py-3 px-4">Scheduled Slot</th>
+                        <th class="py-3 px-4">Assigned Engineer</th>
+                        <th class="py-3 px-4">Status</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for job in jobs %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3.5 px-4">
+                            <span class="font-bold text-slate-900 block text-sm">{{ job.service_type }}</span>
+                            <span class="text-slate-400 text-[11px]">Ref: #JOB-{{ job.id }}</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <a href="/customers/{{ job.customer.id }}" class="font-semibold text-slate-800 hover:text-emerald-600 block">{{ job.customer.name }}</a>
+                            <span class="text-slate-400 text-[11px] truncate block max-w-xs">{{ job.customer.address }}</span>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-medium text-slate-800"><i class="fa-regular fa-calendar text-slate-400 mr-1.5"></i>{{ job.scheduled_date }}</div>
+                            <div class="text-slate-500"><i class="fa-regular fa-clock text-slate-400 mr-1.5"></i>{{ job.scheduled_time }}</div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            {% if job.staff %}
+                                <div class="font-bold text-slate-800">{{ job.staff.name }}</div>
+                                <span class="text-slate-400 text-[11px]">{{ job.staff.role }}</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <form action="/jobs/{{ job.id }}/status" method="post" class="inline">
+                                <select name="status" onchange="this.form.submit()" class="text-[11px] font-semibold rounded-full px-2.5 py-1 border focus:outline-none cursor-pointer
+                                    {% if job.status == 'Completed' %}bg-emerald-50 text-emerald-800 border-emerald-200
+                                    {% elif job.status == 'In Progress' %}bg-blue-50 text-blue-800 border-blue-200
+                                    {% else %}bg-amber-50 text-amber-800 border-amber-200{% endif %}">
+                                    <option value="Pending" {% if job.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                    <option value="In Progress" {% if job.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Completed" {% if job.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            <a href="/jobs/{{ job.id }}/edit" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">Edit / Reassign</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-500 text-sm">No jobs or appointments recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
